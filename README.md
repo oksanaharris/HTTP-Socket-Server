@@ -18,8 +18,8 @@
 
 The main server file is `server.js`. Additional **javascript** files may also be created.
 
-1. Create a socket server to accept TCP connections
-1. The server will listen on port **8080**
+1. X - Create a socket server to accept TCP connections
+1. X - The server will listen on port **8080**
 1. Transmit 'standard' HTTP Headers to the client
 1. Transmit a hardcoded, in-memory html body for each route
 1. Terminate the connection
