@@ -19,8 +19,13 @@ function connectionListen (){
 }
 
 function generateHeader(status){
-  // if (status){}
-  var statusHeader = 'HTTP/1.1 200 OK\n';
+  var statusHeader;
+  if (status === 200){
+    statusHeader = 'HTTP/1.1 ' + status + ' OK\n';
+  } else if (status === 404){
+    statusHeader = 'HTTP/1.1 ' + status + ' NOT FOUND\n';
+  }
+
   //this should also be able to pass status code 404
   var dateHeader = 'Date: ' + new Date().toUTCString() + '\n';
   var serverHeader = 'Server: Poops McGee\n\n';
@@ -40,64 +45,57 @@ function connectionEstablished(connection){
   console.log('connection established');
 
   connection.on('data', (input) => {
-    console.log('input is: \n', input.toString());
+    console.log('REQUEST');
+    console.log(input.toString());
 
     var requestLinesArr = input.toString().split('\n');
 
-    console.log(requestLinesArr);
-
-    // requestLinesArr.forEach((line) => {
-    //   if(line.indexOf('GET') === 0){
-    //     var headArr = line.split(' ');
-    //     path = headArr[1];
-    //     console.log('path: ', path);
-    //   }
-    // });
+    // console.log(requestLinesArr);
 
     var method = requestLinesArr[0].split(' ')[0];
-    // console.log('method ', method);
+    // console.log('METHOD');
+    // console.log(method);
 
     var path = requestLinesArr[0].split(' ')[1];
-    //   if(line.indexOf('GET') === 0){
-    //     var headArr = line.split(' ');
-    //     path = headArr[1];
-    //     console.log('path: ', path);
-    //   }
-    // });
+    // console.log('PATH');
+    // console.log(path);
 
-
-    generateResponse(path, connection);
-
-    // switch (path){
-    //   case '/helium.html':
-    //     body = generateBody();
-    //     break;
-    //   case '/hydrogen.html':
-    //     break;
-    //   case '/index.html':
-    //     break;
-    //   default:
-    //     break;
-    // }
+    generateResponse(method, path, connection);
 
   });
 
 }
 
+function generateResponse(method, path, connection){
 
-function generateResponse(path, connection){
-  var header = generateHeader();
-  var body;
+  var status = 200;
+
+  var validPathArr = ['/index.html', '/hydrogen.html', '/helium.html', '/css/styles.css'];
+  if (validPathArr.indexOf(path) === -1){
+    if (path === '' || path === ' ' || path === '/'){
+      path = '/index.html';
+    } else {
+      path = '/404.html';
+      status = 404;
+    }
+  }
+
+  var header = generateHeader(status);
 
   fs.readFile(('.' + path), function read(err, data) {
       if (err) {
         console.log('errrrrrroooorrrr');
         connection.write('HTTP/1.1 500 ERROR');
       } else {
+        var body = data;
+        // can I do a return body here to the outside generateResposne function?
+        var content;
 
-        body = data;
-
-        var content = header + body;
+        if(method === 'HEAD'){
+          content = header;
+        } else if (method === 'GET'){
+          content = header + body;
+        }
 
         connection.write(content);
       }
