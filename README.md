@@ -20,10 +20,11 @@ The main server file is `server.js`. Additional **javascript** files may also be
 
 1. X - Create a socket server to accept TCP connections
 1. X - The server will listen on port **8080**
-1. Transmit 'standard' HTTP Headers to the client
-1. Transmit a hardcoded, in-memory html body for each route
-1. Terminate the connection
-1. If the path is not found in your routes, return a **404** status code and output some `text/html` content
+1. X - Terminate the connection
+1. X - Transmit 'standard' HTTP Headers to the client***
+1. X - Transmit a hardcoded, in-memory html body for each route
+
+1. X - If the path is not found in your routes, return a **404** status code and output some `text/html` content
 
 _note, all data must be stored in memory, that is, in javascript only. external modules may be used through revealing module pattern._
 

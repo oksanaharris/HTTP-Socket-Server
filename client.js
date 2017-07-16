@@ -52,6 +52,9 @@
 //   1. Handle the case where the HTTP Response results in a server error (50x)
 //   1. Handle any other errors that you may encounter
 
+// if the status I get back is a 404, or other 400 series status
+// error message if host cannot be reached - if not connection is being made
+
 // ### Advanced Client
 
 // Allow the client to send a valid POST request with a message body to a server.
@@ -70,18 +73,73 @@
 
 const net = require('net');
 
-const argArr = process.argv;
-argArr.shift();
-argArr.shift();
-
 // console.log(cliArgs);
 
-const requestObj = {
-  method: argArr[0],
-  path: argArr[1],
-  server: argArr[2],
-  port: argArr[3],
-  headeronly: argArr[4]
+//X - need to make sure it doesn't include http://, https://, or www.
+//X - need to define everything after / as the path
+//X - need to assume it's a GET method if no arguments are provided
+//X - needs to assume it's 80 port if nothing is provided
+//if no arguments are provided at all, then display error message;
+//need to make the rest of the arguments have default values and be optional
+
+var requestObj = parseArguments(process.argv);
+
+function parseArguments (argArr){
+
+  if (argArr.length === 2){
+    console.log('rerun command with argumenents: url [port] [headersonly - true or false]');
+  }
+
+  argArr.shift();
+  argArr.shift();
+
+  var address = argArr[0];
+
+  var port;
+
+  if (argArr[1] === undefined){
+    port = 80;
+  } else {
+    port = parseInt(argArr[1]);
+  }
+
+  var unwantedStrArr = [{str:'www.', cut: 4}, {str:'https://', cut: 8}, {str:'http://', cut: 7}];
+
+  unwantedStrArr.forEach((string) => {
+    var index = address.indexOf(string.str);
+    if (index > -1){
+      addressArr = address.split('');
+      addressArr.splice(index, string.cut);
+      address = addressArr.join('');
+    }
+  });
+
+  var path = '';
+
+  var fileBeginning = address.indexOf('/');
+  if (fileBeginning > - 1){
+    path = '.' + address.substring(fileBeginning);
+    address = address.slice(0, fileBeginning);
+  } else {
+    path = './index.html'
+  }
+  //path = wtf??
+
+  var headeronly;
+
+  if (argArr[2] === undefined){
+    headeronly = 'false';
+  } else {
+    headeronly = argArr[2];
+  }
+
+  return {
+    method: 'GET',
+    path: path,
+    host: address,
+    port: port,
+    headeronly: headeronly
+  }
 }
 
 console.log('REQUEST OBJECT');
@@ -93,13 +151,10 @@ const headerObj = {
   server: 'server'
 };
 
-
-
-//this should be able to accept an argument for the port
-const serverConnection = net.createConnection(requestObj.port, '0.0.0.0', connectListener);
+const serverConnection = net.createConnection({port: requestObj.port, host: requestObj.host}, connectListener);
 
 function connectListener(){
-  console.log('i am making a connection');
+  console.log('\ni am making a connection');
 
   process.stdin.on('data', (input) => {
     //getting the right arguments
@@ -111,7 +166,11 @@ function connectListener(){
     // serverConnection.write(request);
   });
 
-  var request = generateRequestHeader(requestObj.method, requestObj.path, requestObj.server, requestObj.port, requestObj.headeronly);
+  var request = generateRequestHeader(requestObj.method, requestObj.path, requestObj.host, requestObj.port, requestObj.headeronly);
+
+  console.log('\nSENDING THIS REQUEST');
+  console.log(request);
+
   serverConnection.write(request);
 
   serverConnection.on('data', (input) => {
@@ -133,7 +192,7 @@ function connectListener(){
     console.log('BODY');
     console.log(body);
 
-    // serverConnection.end();
+    serverConnection.destroy();
     // not sure how to close.....
 
   });
@@ -153,8 +212,8 @@ function parseHeader(headerStr){
 //server argument should be a CLI argument
 function generateRequestHeader(method, path, server, port, headeronly){
 
-  console.log(headeronly);
-  console.log(method);
+  // console.log(headeronly);
+  // console.log(method);
 
   if(headeronly === 'true'){
     method = 'HEAD';
